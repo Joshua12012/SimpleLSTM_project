@@ -13,17 +13,44 @@ with open('tokenizer.pkl','rb') as handle:
 
 # function to predict the next word
 # predict function
+# def predict_next_word(model, tokenizer, text, max_sequence_len):
+#     token_list=tokenizer.texts_to_sequences([text])[0]
+#     if len(token_list) >= max_sequence_len:
+#         token_list=token_list[-(max_sequence_len-1):]
+#     token_list=pad_sequences([token_list], maxlen=max_sequence_len-1, padding='pre')
+#     predicted = model.predict(token_list, verbose=0)
+#     predicted_word_index = np.argmax(predicted, axis=1)
+#     for word, index in tokenizer.word_index.items():
+#         if index==predicted_word_index:
+#             return word
+#     return None
 def predict_next_word(model, tokenizer, text, max_sequence_len):
-    token_list=tokenizer.texts_to_sequences([text])[0]
-    if len(token_list) >= max_sequence_len:
-        token_list=token_list[-(max_sequence_len-1):]
-    token_list=pad_sequences([token_list], maxlen=max_sequence_len-1, padding='pre')
+    # convert text to sequence
+    token_list = tokenizer.texts_to_sequences([text])[0]
+
+    # handle unknown / empty input
+    if len(token_list) == 0:
+        return None
+
+    # keep only last (max_sequence_len - 1) tokens
+    token_list = token_list[-(max_sequence_len - 1):]
+
+    # pad sequence
+    token_list = pad_sequences(
+        [token_list],
+        maxlen=max_sequence_len - 1,
+        padding='pre'
+    )
+
+    # predict probabilities
     predicted = model.predict(token_list, verbose=0)
-    predicted_word_index = np.argmax(predicted, axis=1)
-    for word, index in tokenizer.word_index.items():
-        if index==predicted_word_index:
-            return word
-    return None
+
+    # get predicted word index
+    predicted_word_index = np.argmax(predicted)
+
+    # map index to word
+    return tokenizer.index_word.get(predicted_word_index, None)
+
 
 # streamlit app
 st.title("Next Word Prediction")
